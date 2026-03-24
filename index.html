@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ular Tangga 100 🐍🎲</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #e0f7fa;
+            --primary: #0288d1;
+            --primary-dark: #01579b;
+            --board-bg: rgba(255, 255, 255, 0.6);
+            --p1-color: #f44336;
+            /* Merah */
+            --p2-color: #2196f3;
+            /* Biru */
+            --p3-color: #4caf50;
+            /* Hijau */
+            --p4-color: #ffeb3b;
+            /* Kuning */
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #e0f7fa 0%, #80deea 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        h1 {
+            color: var(--primary-dark);
+            margin-top: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 600px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            width: 90%;
+            text-align: center;
+        }
+
+        button {
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(2, 136, 209, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+            margin: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(2, 136, 209, 0.5);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button:disabled {
+            background: #bbb;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        input,
+        select {
+            padding: 10px 15px;
+            font-size: 1rem;
+            border-radius: 10px;
+            border: 2px solid #ccc;
+            margin: 10px 0;
+            width: 80%;
+            font-family: inherit;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        /* Game Board */
+        #board-container {
+            width: 95%;
+            max-width: 550px;
+            position: relative;
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 2px;
+            background: var(--primary-dark);
+            padding: 5px;
+            border-radius: 10px;
+            aspect-ratio: 1 / 1;
+        }
+
+        .cell {
+            background: white;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #666;
+            position: relative;
+        }
+
+        .cell.ladder-start {
+            background-color: #e8f5e9;
+        }
+
+        /* Hijau muda buat tangga */
+        .cell.snake-start {
+            background-color: #ffebee;
+        }
+
+        /* Merah muda buat ular */
+
+        .snake-ladder-info {
+            font-size: 0.55rem;
+            position: absolute;
+            bottom: 1px;
+            right: 1px;
+            color: var(--primary-dark);
+            font-weight: bold;
+        }
+
+        /* Player pieces */
+        .token {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 10;
+            border: 2px solid white;
+        }
+
+        /* UI Indicators */
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .player-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .player-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            background: white;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border: 2px solid transparent;
+            opacity: 0.6;
+            transition: 0.3s;
+        }
+
+        .player-badge.active {
+            opacity: 1;
+            transform: scale(1.1);
+            font-weight: bold;
+        }
+
+        /* Modal / Question Box */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 80%;
+            width: 350px;
+            animation: bounceIn 0.4s;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            80% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .controls {
+            margin-top: 15px;
+            width: 100%;
+            text-align: center;
+        }
+
+        #status-text {
+            margin-top: 10px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 500px) {
+            .cell {
+                font-size: 0.7rem;
+            }
+
+            .snake-ladder-info {
+                font-size: 0.45em;
+            }
+
+            .token {
+                width: 12px;
+                height: 12px;
+            }
+
+            #board {
+                gap: 1px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SCRIPT KEBUTUHAN: MQTT & Confetti -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <h1>🐍 Ular Tangga 100</h1>
+
+    <!-- LAYAR 1: MENU UTAMA -->
+    <div id="screen-main" class="screen active">
+        <div class="card">
+            <h2>Pilih Mode Permainan</h2>
+            <button onclick="nav('screen-local')">Main Lokal (1 HP)</button><br>
+            <button onclick="nav('screen-online')">Main Online (Beda HP)</button>
+        </div>
+    </div>
+
+    <!-- LAYAR 2: SETUP LOKAL -->
+    <div id="screen-local" class="screen">
+        <div class="card">
+            <h2>Setup Lokal</h2>
+            <label>Jumlah Pemain:</label><br>
+            <select id="local-players-count">
+                <option value="2">2 Orang</option>
+                <option value="3">3 Orang</option>
+                <option value="4">4 Orang</option>
+            </select><br>
+            <button onclick="startLocalGame()">Mulai Permainan</button>
+            <button onclick="nav('screen-main')" style="background: #888;">Kembali</button>
+        </div>
+    </div>
+
+    <!-- LAYAR 3: SETUP ONLINE -->
+    <div id="screen-online" class="screen">
+        <div class="card">
+            <h2>Mode Online</h2>
+            <input type="text" id="player-name" placeholder="Nama Anda (Misal: Andi)" maxlength="10"><br>
+            <button onclick="createRoom()">Buat Ruangan (Host)</button>
+            <hr style="border:1px solid #eee; margin:20px 0;">
+            <input type="text" id="room-code-input" placeholder="Kode Ruangan (Contoh: ABCD)" maxlength="6"
+                style="text-transform:uppercase"><br>
+            <button onclick="joinRoom()">Masuk Ruangan</button>
+            <button onclick="nav('screen-main')" style="background: #888;">Kembali</button>
+        </div>
+    </div>
+
+    <!-- LAYAR 4: LOBBY ONLINE -->
+    <div id="screen-lobby" class="screen">
+        <div class="card">
+            <h2>Lobby Online</h2>
+            <h3 id="lobby-code-display" style="color:var(--primary); letter-spacing: 2px;">KODE: ----</h3>
+            <p>Bagikan kode di atas ke temanmu!</p>
+            <div id="lobby-players"></div>
+            <p id="lobby-status" style="font-size:0.9rem; color: #666;"></p>
+            <div id="host-controls" style="display:none; margin-top:20px;">
+                <button onclick="startOnlineGame()">Mulai Gim Sekarang</button>
+            </div>
+            <button onclick="location.reload()" style="background: #888;">Keluar</button>
+        </div>
+    </div>
+
+    <!-- LAYAR 5: PERMAINAN UTAMA -->
+    <div id="screen-game" class="screen">
+        <div style="width: 95%; max-width: 550px;">
+            <div class="info-panel" id="room-id-display"></div>
+            <div class="player-list" id="ui-player-list">
+                <!-- Badges rendered by JS -->
+            </div>
+        </div>
+
+        <div id="board-container">
+            <div id="board">
+                <!-- 100 kotak dirender JS -->
+            </div>
+            <!-- Token Pemain -->
+            <div id="tokens-container"></div>
+        </div>
+
+        <div class="controls card" style="margin-top: 15px; padding: 15px;">
+            <div id="status-text">Siap untuk mulai!</div>
+            <button id="btn-roll" onclick="rollDice()">🎲 Kocok Dadu</button>
+        </div>
+    </div>
+
+    <!-- MODAL PERTANYAAN -->
+    <div id="modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title" style="color: var(--primary);">Kartu</h2>
+            <p id="modal-text" style="font-size: 1.1rem; margin: 20px 0;"></p>
+            <button id="btn-modal-close" onclick="closeModal()">Lanjut Game</button>
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURASI PERMAINAN ---
+        const P_COLORS = ['var(--p1-color)', 'var(--p2-color)', 'var(--p3-color)', 'var(--p4-color)'];
+        // Snake (Turun): Kunci = Kepala, Nilai = Ekor
+        const snakes = { 17: 7, 54: 34, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 99: 78 };
+        // Ladder (Naik): Kunci = Bawah, Nilai = Atas
+        const ladders = { 4: 14, 9: 31, 20: 38, 28: 84, 40: 59, 51: 67, 63: 81, 71: 91 };
+
+        const questions = [
+            "Apa kejadian paling memalukan yang pernah kamu alami?",
+            "Sebutkan lagu favoritmu sepanjang masa dan nyanyikan sedikit!",
+            "Kalau kamu dapat uang 1 Miliar hari ini, buat apa uangnya?",
+            "Apa satu rahasiamu yang belum ada yang tahu di sini?",
+            "Tiru gaya bicara salah satu pemain di room ini sekarang!",
+            "Tatap mata pemain di sebelahmu dan pujilah 3 hal fisiknya.",
+            "Ceritakan mimpi paling aneh yang pernah kamu alami.",
+            "Siapa artis/idol yang paling kamu taksir waktu kecil?",
+            "Coba joget TikTok/dance bebas selama 5 detik!",
+            "Berikan pujian terbaikmu untuk pemain yang main giliran sebelumnya.",
+            "Bikin wajah paling jelek / lucu yang kamu bisa selama 3 detik!",
+            "Apa makanan yang paling nggak mau kamu makan walau dibayar mahal?",
+            "Sebutkan satu momen di hidupmu yang pengen banget kamu ulang.",
+            "Apa 1 hal bodoh yang pernah kamu lakukan waktu masih SD?",
+            "Jika kamu harus hidup di pulau terpencil sama 1 orang di sini, kamu pilih siapa?"
+        ];
+
+        // --- STATE MANAJEMEN ---
+        let state = {
+            players: [], // { id, name, pos, color }
+            turn: 0,
+            statusMsg: "Mulai permainan!",
+            modal: { show: false, title: "", text: "" },
+            isRolling: false,
+            winner: null
+        };
+
+        // Network Data
+        let isOnline = false;
+        let isHost = false;
+        let roomCode = "";
+        let myId = "p_" + Math.random().toString(36).substr(2, 6);
+        let myName = "";
+        let mqttClient = null;
+
+        const boardEl = document.getElementById('board');
+        let cellElements = [];
+
+        // --- NAVIGASI UI ---
+        function nav(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function randEl(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+        // --- MEMBUAT PAPAN 100 ---
+        function createBoard() {
+            boardEl.innerHTML = '';
+            cellElements = [];
+
+            // Grid 10x10. Boustrophedon / ZigZag dari bawah 1, 2...
+            // Karena flex atas ke bawah, row 9 di atas (kotak 91-100), row 0 di bawah (1-10).
+            for (let row = 9; row >= 0; row--) {
+                let startNumber = row * 10 + 1;
+                let cellsInRow = [];
+                for (let i = 0; i < 10; i++) {
+                    cellsInRow.push(startNumber + i);
+                }
+
+                // Kalau row genap (indeks 0, 2..), arah normal (1..10, 21..30). Kalo ganjil dibalik (20..11, 40..31)
+                if (row % 2 !== 0) {
+                    cellsInRow.reverse();
+                }
+
+                cellsInRow.forEach(cellNum => {
+                    let cell = document.createElement('div');
+                    cell.className = 'cell';
+                    if (ladders[cellNum]) cell.classList.add('ladder-start');
+                    if (snakes[cellNum]) cell.classList.add('snake-start');
+
+                    cell.innerText = cellNum;
+
+                    let info = document.createElement('span');
+                    info.className = 'snake-ladder-info';
+                    if (ladders[cellNum]) info.innerText = `🪜➔${ladders[cellNum]}`;
+                    if (snakes[cellNum]) info.innerText = `🐍➔${snakes[cellNum]}`;
+                    if (info.innerText) cell.appendChild(info);
+
+                    boardEl.appendChild(cell);
+                    cellElements[cellNum] = cell; // Simpan dom berdasarkan indeks
+                });
+            }
+        }
+
+        // --- RENDER PERMAINAN ---
+        function renderUI() {
+            // Render Badges
+            const plList = document.getElementById('ui-player-list');
+            plList.innerHTML = '';
+            state.players.forEach((p, idx) => {
+                let badge = document.createElement('div');
+                badge.className = 'player-badge ' + (idx === state.turn ? 'active' : '');
+                badge.style.borderColor = p.color;
+                badge.innerHTML = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${p.color};margin-right:5px;"></span> ${p.name}`;
+                plList.appendChild(badge);
+            });
+
+            document.getElementById('status-text').innerText = state.statusMsg;
+
+            // Update UI Tokens on Board
+            let tkCont = document.getElementById('tokens-container');
+            tkCont.innerHTML = '';
+
+            state.players.forEach((p, idx) => {
+                let token = document.createElement('div');
+                token.className = 'token';
+                token.style.backgroundColor = p.color;
+
+                let targetCell = cellElements[p.pos];
+                if (targetCell) {
+                    let cRect = targetCell.getBoundingClientRect();
+                    let bRect = boardEl.getBoundingClientRect();
+
+                    // Offset token biar ga numbruk tengah 100% jika banyak yang 1 petak
+                    let offTop = (idx < 2) ? -8 : 8;
+                    let offLeft = (idx % 2 === 0) ? -8 : 8;
+
+                    let top = (cRect.top - bRect.top) + (cRect.height / 2) - 8 + offTop;
+                    let left = (cRect.left - bRect.left) + (cRect.width / 2) - 8 + offLeft;
+
+                    token.style.top = top + "px";
+                    token.style.left = left + "px";
+                }
+                tkCont.appendChild(token);
+            });
+
+            const btnRoll = document.getElementById('btn-roll');
+            if (state.winner) {
+                btnRoll.disabled = true;
+                btnRoll.innerText = "Game Selesai";
+            } else if (state.isRolling) {
+                btnRoll.disabled = true;
+                btnRoll.innerText = "🎲 Mengocok...";
+            } else {
+                // Check if it's my turn in online mode
+                if (isOnline && state.players[state.turn].id !== myId) {
+                    btnRoll.disabled = true;
+                    btnRoll.innerText = `Giliran ${state.players[state.turn].name}`;
+                } else {
+                    btnRoll.disabled = false;
+                    btnRoll.innerText = "🎲 Kocok Dadu!";
+                }
+            }
+
+            // Sync Modal
+            const modalEl = document.getElementById('modal');
+            const btnCloseModal = document.getElementById('btn-modal-close');
+            if (state.modal.show) {
+                document.getElementById('modal-title').innerText = state.modal.title;
+                document.getElementById('modal-text').innerText = state.modal.text;
+                modalEl.classList.add('show');
+
+                // Hanya orang yang kena yang bisa close, host / yg bersangkutan
+                if (isOnline && state.players[state.turn].id !== myId && state.modal.title !== "🎉 KITA PUNYA PEMENANG! 🎉") {
+                    btnCloseModal.style.display = 'none'; // orang lain yang nonton dare-nya gabisa close modal
+                } else {
+                    btnCloseModal.style.display = 'inline-block';
+                }
+            } else {
+                modalEl.classList.remove('show');
+            }
+
+            // Render confetti if winner
+            if (state.winner && state.modal.show) {
+                confetti({ particleCount: 15, spread: 50, origin: { y: 0.6 } });
+            }
+        }
+
+        // --- LOKAL LOGIC ---
+        function startLocalGame() {
+            let num = parseInt(document.getElementById('local-players-count').value);
+            isOnline = false;
+            state.players = [];
+            for (let i = 0; i < num; i++) {
+                state.players.push({
+                    id: 'local_' + i,
+                    name: `Pemain ${i + 1}`,
+                    pos: 1,
+                    color: P_COLORS[i]
+                });
+            }
+            state.turn = 0; state.statusMsg = `Giliran ${state.players[0].name} mulai!`;
+            createBoard();
+            nav('screen-game');
+            // Timeout to allow render
+            setTimeout(renderUI, 100);
+        }
+
+        // --- ONLINE LOGIC (MQTT via EMQX Broker public) ---
+        function generateRoomCode() {
+            return Math.random().toString(36).substring(2, 6).toUpperCase();
+        }
+
+        function createRoom() {
+            myName = document.getElementById('player-name').value.trim() || "Pemain1";
+            roomCode = generateRoomCode();
+            isOnline = true;
+            isHost = true;
+
+            // Host state setup
+            state.players = [{ id: myId, name: myName, pos: 1, color: P_COLORS[0] }];
+
+            nav('screen-lobby');
+            document.getElementById('lobby-code-display').innerText = `KODE RUANGAN: ${roomCode}`;
+            document.getElementById('host-controls').style.display = 'block';
+            connectWifi();
+        }
+
+        function joinRoom() {
+            myName = document.getElementById('player-name').value.trim() || "Tamu";
+            roomCode = document.getElementById('room-code-input').value.trim().toUpperCase();
+            if (!roomCode) return alert("Masukkan kode ruangan!");
+
+            isOnline = true;
+            isHost = false;
+            nav('screen-lobby');
+            document.getElementById('lobby-code-display').innerText = `KODE RUANGAN: ${roomCode}`;
+            connectWifi();
+        }
+
+        function connectWifi() {
+            document.getElementById('lobby-status').innerText = "Menghubungkan ke server...";
+            mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+
+            mqttClient.on('connect', () => {
+                document.getElementById('lobby-status').innerText = "Terhubung! " + (isHost ? "Menunggu pemain lain." : "Menunggu host...");
+                const topicRaw = 'mirorUlarTangga/' + roomCode;
+                mqttClient.subscribe(topicRaw);
+
+                if (!isHost) {
+                    // Minta join ke host
+                    mqttClient.publish(topicRaw, JSON.stringify({
+                        cmd: 'JOIN',
+                        player: { id: myId, name: myName, pos: 1 }
+                    }));
+                } else {
+                    broadcastState();
+                }
+            });
+
+            mqttClient.on('message', (topic, message) => {
+                const data = JSON.parse(message.toString());
+
+                if (data.cmd === 'JOIN' && isHost) {
+                    // Kalau masih di bawah 4 orang dan belum main
+                    if (state.players.length < 4 && state.statusMsg === "Mulai permainan!") {
+                        data.player.color = P_COLORS[state.players.length];
+                        state.players.push(data.player);
+                        updateLobbyUI();
+                        broadcastState();
+                    }
+                } else if (data.cmd === 'STATE') {
+                    // Update all state received from HOST or Turn Player
+                    state = data.state;
+                    if (document.getElementById('screen-lobby').classList.contains('active')) {
+                        updateLobbyUI();
+                        // Kalau host sudah klik mulai, data akan ada property ready
+                        if (state.started) {
+                            createBoard();
+                            document.getElementById('room-id-display').innerText = "Kode: " + roomCode;
+                            nav('screen-game');
+                            setTimeout(renderUI, 100);
+                        }
+                    } else {
+                        renderUI();
+                    }
+                }
+            });
+        }
+
+        function updateLobbyUI() {
+            document.getElementById('lobby-players').innerHTML = "<b>Pemain tergabung:</b><br>" +
+                state.players.map(p => `- ${p.name}`).join("<br>");
+        }
+
+        function startOnlineGame() {
+            state.started = true;
+            state.statusMsg = `Giliran ${state.players[0].name} mulai!`;
+            broadcastState(); // Akan men-trigger perpindahan frame untuk semua client
+        }
+
+        function broadcastState() {
+            if (isOnline && mqttClient) {
+                mqttClient.publish('mirorUlarTangga/' + roomCode, JSON.stringify({
+                    cmd: 'STATE',
+                    state: state
+                }));
+            }
+        }
+
+
+        // --- LOGIKA GAMEPLAY ---
+        async function rollDice() {
+            if (state.winner) return;
+            if (isOnline && state.players[state.turn].id !== myId) return;
+
+            // Efek rolling
+            state.isRolling = true;
+            state.statusMsg = `Mengocok...`;
+            if (isOnline) broadcastState(); else renderUI();
+
+            let result = 1;
+            for (let i = 0; i < 6; i++) {
+                result = Math.floor(Math.random() * 6) + 1;
+                await new Promise(r => setTimeout(r, 100));
+            }
+
+            state.isRolling = false;
+            let pName = state.players[state.turn].name;
+            let currentP = state.players[state.turn];
+
+            let nextP = currentP.pos + result;
+            if (nextP > 100) {
+                let excess = nextP - 100;
+                nextP = 100 - excess;
+                state.statusMsg = `${pName} melempar ${result}, mundur sisa: ${nextP}`;
+            } else {
+                state.statusMsg = `${pName} melempar angka ${result}!`;
+            }
+
+            currentP.pos = nextP;
+            if (isOnline) broadcastState(); else renderUI();
+
+            // Tunggu animasi jalan, cek tangga/ular
+            setTimeout(() => {
+                let checkMsg = "";
+                let kenaUlar = false;
+                if (ladders[currentP.pos]) {
+                    currentP.pos = ladders[currentP.pos];
+                    checkMsg = "🪜 Yey, Naik Tangga!";
+                } else if (snakes[currentP.pos]) {
+                    currentP.pos = snakes[currentP.pos];
+                    checkMsg = "🐍 Aduh, Turun Ular!";
+                    kenaUlar = true;
+                }
+
+                if (checkMsg !== "") {
+                    state.statusMsg = checkMsg;
+                    if (isOnline) broadcastState(); else renderUI();
+
+                    setTimeout(() => resolveTurnEvent(currentP.pos, kenaUlar), 600);
+                } else {
+                    resolveTurnEvent(currentP.pos, kenaUlar);
+                }
+
+            }, 700);
+        }
+
+        function resolveTurnEvent(newPos, isSnakeHit) {
+            let pName = state.players[state.turn].name;
+
+            if (newPos === 100) {
+                state.winner = state.players[state.turn];
+                state.modal = {
+                    show: true,
+                    title: "🎉 KITA PUNYA PEMENANG! 🎉",
+                    text: `SELAMAT! ${pName} telah menyelesaikan papan!\nPemenang berhak minta 1 traktiran / keinginan dari kalian!`
+                };
+            } else {
+                if (!isSnakeHit && newPos > 1) { // Bebas dari hukuman di petak awal
+                    state.modal = {
+                        show: true,
+                        title: `💌 Tantangan untuk ${pName}`,
+                        text: randEl(questions)
+                    };
+                } else {
+                    passTurn();
+                }
+            }
+            if (isOnline) broadcastState(); else renderUI();
+        }
+
+        function closeModal() {
+            state.modal.show = false;
+            if (!state.winner) {
+                passTurn();
+            }
+            if (isOnline) broadcastState(); else renderUI();
+        }
+
+        function passTurn() {
+            state.turn = (state.turn + 1) % state.players.length;
+            let pName = state.players[state.turn].name;
+            state.statusMsg = `Giliran ${pName}`;
+        }
+    </script>
+</body>
+
+</html>
